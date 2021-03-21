@@ -1,0 +1,13 @@
+Flask==1.1.2
+Flask-RESTful==0.3.8
+future==0.18.2
+google-api-core==1.26.1
+google-api-python-client==2.0.2
+google-auth==1.27.1
+google-auth-httplib2==0.1.0
+google-cloud-bigquery==2.11.0
+google-cloud-core==1.6.0
+google-crc32c==1.1.2
+google-resumable-media==1.2.0
+googleapis-common-protos==1.53.0
+s2==0.1.9
