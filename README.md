@@ -6,7 +6,7 @@ We will use only the following tables:
 
 Creating Service on Google Cloud Enviornment for BigQuery: 
 1. Navigate to browser tab, and Open Google cloud `https://console.cloud.google.com/`
-2. Login by putting in your credentials
+2. Login by entering your credentials
 3. On the left Panel, Click Google Cloud Platform go to IAM & admin and then Service Account.
 4. Create New Service Account by clicking `CLick Service Account`.
     Fill in the details Service account name and description and hit create. 
