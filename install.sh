@@ -1,4 +1,4 @@
 echo 'Welcome to the project'
-pip install -r ./requirements.txt
+pip3 install -r ./requirements.txt
 echo 'Setting up localhost'
-python run.py
+python3 run.py
