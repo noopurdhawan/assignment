@@ -1,11 +1,12 @@
-from flask_restful import Resource, reqparse, abort
+from flask_restful import Resource, reqparse
 from flask import json
-from app import app, api
+from app import app
+from app.utils import geotos2
+
+# import bigquery
 from google.cloud import bigquery
 
 # argument parsing
-from app.utils import geotos2
-
 parser = reqparse.RequestParser()
 parser.add_argument('start')
 parser.add_argument('end')
@@ -14,16 +15,20 @@ parser.add_argument('date')
 
 class TotalTripsPerDay(Resource):
     def get(self):
-        """
+        """ Total number of trips per day in the date range, based on the pickup time of the trip.
 
-        :return:
-        """
+        :return: Response 200 and result in json
+       """
         try:
+            # parse the arguments
             args = parser.parse_args()
+            # start and end date in ISO format
             start = args['start']
             end = args['end']
             data = []
+            # check the Parameter missing or not
             if start and end:
+                # Construct a BigQuery client object.
                 client = bigquery.Client()
                 query = """
                     SELECT
@@ -35,44 +40,54 @@ class TotalTripsPerDay(Resource):
                     HAVING date BETWEEN @start AND @end
                     ORDER BY date
                 """
-                # return query
+                # set the parameter for query
                 job_config = bigquery.QueryJobConfig(
                     query_parameters=[
                         bigquery.ScalarQueryParameter("start", "STRING", start),
                         bigquery.ScalarQueryParameter("end", "STRING", end)
                     ]
                 )
+                # Start the query, passing in the extra configuration. Make an API request.
                 query_job = client.query(query, job_config=job_config)
 
+                # Fetch jobs created by the SQL script.
                 for row in query_job:
                     result = {'date': str(row['date']),
                               'total_trips': row['total_trips']}
                     data.append(result)
+                # Set the status code 200 if task is completed
                 status = 200
             else:
+                # Set the status code 400 if Parameter missing
                 status = 400
-                data = [{'message': 'parameter missing'}]
+                data = [{'message': 'Parameter Missing'}]
         except:
+            # Set the status code 400 if Bad Request
             status = 400
-            data = [{'message': 'bad request'}]
+            data = [{'message': 'Bad Request'}]
 
+        # return the response with status code and data in json format
         response = app.response_class(response=json.dumps(data),
                                       status=status,
                                       mimetype='application/json')
         return response
 
 
-class FareHeatMap(Resource):
+class AverageFareHeatMap(Resource):
     def get(self):
         """
 
         :return:
         """
         try:
+            # parse the arguments
             args = parser.parse_args()
+
+            # start and end date in ISO format
             date = args['date']
             data = []
             if date:
+                # Construct a BigQuery client object.
                 client = bigquery.Client()
                 query = """
                             SELECT
@@ -86,26 +101,32 @@ class FareHeatMap(Resource):
                               AND pickup_location IS NOT NULL
                               GROUP BY latitude,longitude
                         """
-                # return query
+                # Set the parameter for query
                 job_config = bigquery.QueryJobConfig(
                     query_parameters=[
                         bigquery.ScalarQueryParameter("date", "STRING", date)
                     ]
                 )
-
+                # Start the query, passing in the extra configuration. Make an API request.
                 query_job = client.query(query, job_config=job_config)
+
+                # Fetch jobs created by the SQL script.
                 for row in query_job:
                     result = {'s2id': geotos2(row['latitude'], row['longitude']),
                               'fare': round(row['fare'], 2)}
                     data.append(result)
+                # Set the status code 200 if task is completed
                 status = 200
             else:
+                # Set the status code 400 if Parameter missing
                 status = 400
-                data = [{'message': 'parameter missing'}]
+                data = [{'message': 'Parameter Missing'}]
         except:
+            # Set the status code 400 if Bad Request
             status = 400
-            data = [{'message': 'bad request'}]
+            data = [{'message': 'Bad request'}]
 
+        # return the response with status code and data in json format
         response = app.response_class(response=json.dumps(data),
                                       status=status,
                                       mimetype='application/json')
@@ -120,9 +141,11 @@ class AverageSpeed24hours(Resource):
         """
         try:
             args = parser.parse_args()
+            # date in ISO format
             date = args['date']
             data = []
             if date:
+                # Construct a BigQuery client object.
                 client = bigquery.Client()
                 query = """
                     SELECT
@@ -132,26 +155,35 @@ class AverageSpeed24hours(Resource):
                     FROM    `bigquery-public-data.chicago_taxi_trips.taxi_trips`
                     WHERE    EXTRACT(DATE FROM trip_start_timestamp) = @date
                 """
-                # return query
+
+                # Set the parameter for query
                 job_config = bigquery.QueryJobConfig(
                     query_parameters=[
                         bigquery.ScalarQueryParameter("date", "STRING", date)
                     ]
                 )
+
+                # Start the query, passing in the extra configuration. Make an API request.
                 query_job = client.query(query, job_config=job_config)
-                data = []
+
+                # Fetch jobs created by the SQL script.
                 for row in query_job:
                     result = {'average_speed': row['average_speed_24hrs']}
                     data.append(result)
+
+                # Set the status code 200 if task is completed
                 status = 200
             else:
+                # Set the status code 400 if Parameter missing
                 status = 400
-                data = [{'message': 'parameter missing'}]
+                data = [{'message': 'Parameter missing'}]
 
         except:
+            # Set the status code 400 if Bad Request
             status = 400
-            data = [{'message': 'bad request'}]
+            data = [{'message': 'Bad request'}]
 
+        # return the response with status code and data in json format
         response = app.response_class(response=json.dumps(data),
                                       status=status,
                                       mimetype='application/json')
