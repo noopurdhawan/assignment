@@ -14,7 +14,8 @@ parser.add_argument('date')
 
 
 class TotalTripsPerDay(Resource):
-    def get(self):
+    @staticmethod
+    def get():
         """ Total number of trips per day in the date range, based on the pickup time of the trip.
 
         :return: Response 200 and result in json
@@ -30,10 +31,13 @@ class TotalTripsPerDay(Resource):
             if start and end:
                 # Construct a BigQuery client object.
                 client = bigquery.Client()
+
+                # Query to counts the total_trips date_wise
                 query = """
                     SELECT
                       EXTRACT(DATE FROM trip_start_timestamp) AS date,
-                      COUNT(*) AS total_trips
+                      
+                      COUNT(*) AS total_trips 
                     FROM
                       `bigquery-public-data.chicago_taxi_trips.taxi_trips`
                     GROUP BY date
@@ -74,10 +78,11 @@ class TotalTripsPerDay(Resource):
 
 
 class AverageFareHeatMap(Resource):
-    def get(self):
+    @staticmethod
+    def get():
         """
-
-        :return:
+        The average fare per pick up location S2 ID at level 16 for the given date, based on the pickup time of the trip.
+        :return: :return: Response 200 and result in json
         """
         try:
             # parse the arguments
@@ -89,15 +94,16 @@ class AverageFareHeatMap(Resource):
             if date:
                 # Construct a BigQuery client object.
                 client = bigquery.Client()
+                # Query to get average fare per pick up location
                 query = """
                             SELECT
-                              pickup_latitude as latitude,
+                              pickup_latitude as latitude, 
                               pickup_longitude as longitude,
                               AVG(fare) as fare
                             FROM
                               `bigquery-public-data.chicago_taxi_trips.taxi_trips`
                             WHERE
-                              EXTRACT(DATE FROM trip_start_timestamp) = @date
+                              EXTRACT(DATE FROM trip_start_timestamp) = @date 
                               AND pickup_location IS NOT NULL
                               GROUP BY latitude,longitude
                         """
@@ -112,8 +118,8 @@ class AverageFareHeatMap(Resource):
 
                 # Fetch jobs created by the SQL script.
                 for row in query_job:
-                    result = {'s2id': geotos2(row['latitude'], row['longitude']),
-                              'fare': round(row['fare'], 2)}
+                    result = {'s2id': geotos2(row['latitude'], row['longitude']),  # convert location S2 ID at level 16
+                              'fare': round(row['fare'], 2)}  # rounding to 2 decimal places
                     data.append(result)
                 # Set the status code 200 if task is completed
                 status = 200
@@ -134,9 +140,11 @@ class AverageFareHeatMap(Resource):
 
 
 class AverageSpeed24hours(Resource):
-    def get(self):
+    @staticmethod
+    def get():
         """
-
+        Average speed in miles per hour (trip_distance / (dropoff_datetime - pickup_datetime)) of trips
+        that ended in the past 24 hours from the provided date.
         :return:
         """
         try:
@@ -147,10 +155,14 @@ class AverageSpeed24hours(Resource):
             if date:
                 # Construct a BigQuery client object.
                 client = bigquery.Client()
+
+                # Query to calculate average speed in miles per hour of trips
+                #  that ended in the past 24 hours from the provided date.
                 query = """
                     SELECT
                         ROUND((SUM(trip_miles)) /
-                            (SUM(ABS(TIMESTAMP_DIFF(trip_end_timestamp,trip_start_timestamp,MINUTE)))/60),2)
+                            (SUM(ABS(TIMESTAMP_DIFF(trip_end_timestamp,
+                            trip_start_timestamp,MINUTE)))/60),2)
                             AS average_speed_24hrs
                     FROM    `bigquery-public-data.chicago_taxi_trips.taxi_trips`
                     WHERE    EXTRACT(DATE FROM trip_start_timestamp) = @date
