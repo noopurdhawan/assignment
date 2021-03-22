@@ -2,8 +2,8 @@ import os
 import logging
 import configparser
 
-# Open the logging file  for error and status
-logging.basicConfig(filename='error.log', level=logging.INFO)
+# create the logging file  for status
+logging.basicConfig(filename='status_log_file.log', level=logging.INFO)
 
 try:
     """Read the user_configurations and set the key.json file 
